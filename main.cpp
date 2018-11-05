@@ -4,7 +4,7 @@
 #include "csiwriter.h"
 #include "csifetcher.h"
 
-//#define CSI_FROM_FILE
+#define CSI_FROM_FILE
 
 static CSIWriter *writer;
 

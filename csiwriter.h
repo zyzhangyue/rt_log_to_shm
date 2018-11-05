@@ -2,7 +2,6 @@
 #define CSIWRITER_H
 
 #include "csi_packet.h"
-#include <semaphore.h>
 
 /*
  * user R/W
@@ -17,13 +16,11 @@ class CSIWriter
 {
 private:
     int slots, index;
-    int shmid_sem, shmid_csi;
-    sem_t *sem_array;
+    int semid, shmid;
     csi_packet *csi_array;
 
 private:
     bool init_shm_put();
-    void destroy_sems();
 
 public:
     CSIWriter(int slots = 2);
