@@ -39,10 +39,19 @@ bool CSIWriter::init_shm_put()
         return false;
     }
 
-    // allocating XSI semaphores
-    if ((semid = semget(key_sem, slots, SHM_MODE|IPC_CREAT|IPC_EXCL)) < 0) {
-        fprintf(stderr, "init_shm_put: %s\n", strerror(errno));
-        return false;
+sem_retry:
+    // trying to reference to an existing semaphore set
+    if ((semid = semget(key_sem, 0, SHM_MODE)) < 0) {
+        // if no such a semaphore set exists, we allocate a new one
+        if (errno == EINTR)
+            goto sem_retry;
+        if (errno != ENOENT)
+            return false;
+        // allocating a new XSI semaphore set
+        if ((semid = semget(key_sem, slots, SHM_MODE|IPC_CREAT|IPC_EXCL)) < 0) {
+            fprintf(stderr, "init_shm_put: %s\n", strerror(errno));
+            return false;
+        }
     }
     // initializing XSI semaphores
     unsigned short *values = (unsigned short*)calloc(slots, sizeof(unsigned short));
@@ -51,11 +60,20 @@ bool CSIWriter::init_shm_put()
         return false;
     }
     free(values);
+    fprintf(stderr, "XSI semaphore set initialized\n");
 
-    // get shm segment for csi buffer
-    if ((shmid = shmget(key_csi, sizeof(csi_packet)*slots, SHM_MODE|IPC_CREAT|IPC_EXCL)) < 0) {
-        fprintf(stderr, "Error allocating shared memory segments: %s\n", strerror(errno));
-        return false;
+shm_retry:
+    // trying to referencing to an existing shared memory
+    if ((shmid = shmget(key_csi, 0, SHM_MODE)) < 0) {
+        if (errno == EINTR)
+            goto shm_retry;
+        if (errno != ENOENT)
+            return false;
+        // allocating a new shared memory segment for csi buffer
+        if ((shmid = shmget(key_csi, sizeof(csi_packet)*slots, SHM_MODE|IPC_CREAT|IPC_EXCL)) < 0) {
+            fprintf(stderr, "Error allocating shared memory segments: %s\n", strerror(errno));
+            return false;
+        }
     }
     // attach to shared memory
     csi_array = (csi_packet*)shmat(shmid, nullptr, 0);
@@ -63,6 +81,8 @@ bool CSIWriter::init_shm_put()
         fprintf(stderr, "Error attaching to shared meory segments: %s\n", strerror(errno));
         return false;
     }
+    fprintf(stderr, "XSI shared memory initialized\n");
+
     return true;
 }
 

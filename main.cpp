@@ -14,7 +14,7 @@ void sigint_handler(int signo)
         writer->~CSIWriter();
     }
     exit_program_err();
-    exit(-signo);
+    _exit(-signo);
 }
 
 int main()
@@ -76,6 +76,7 @@ int main()
             break;
         writer->write_csi_to_shm(packet+c);
     }
+    delete writer;
 #endif
     return 0;
 }
