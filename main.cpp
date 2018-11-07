@@ -59,23 +59,20 @@ int main()
     if (writer == nullptr) {
         return -1;
     }
-    fprintf(stderr, "shared memory init succeed\n");
-
     signal(SIGINT, sigint_handler);
     signal(SIGTERM, sigint_handler);
     signal(SIGSEGV, sigint_handler);
 
-    packet = get_all_csi_from_file("./amaoa2_1.dat", &count);
+    packet = get_all_csi_from_file("./test_3.dat", &count);
 
     std::cout << "Total CSI: " << count << endl;
-
-    while (true) {
-        std::cout << ">>";
-        std::cin >> c;
-        if (c == -1)
-            break;
-        writer->write_csi_to_shm(packet+c);
+    int index = 0;
+    for (int i = 0; i < count; i++) {
+//        usleep(100000);
+        writer->write_csi_to_shm(packet+i);
+        std::cout << index++ << ": packet sent\n";
     }
+
     delete writer;
 #endif
     return 0;

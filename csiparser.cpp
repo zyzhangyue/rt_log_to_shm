@@ -90,9 +90,9 @@ bool CSIParser::read_bfee(csi_packet *packet, void *buffer)
 
         for (j = 0; j < Nrx; j++) {
             tmp = (payload[index / 8] >> remainder)|(payload[index/8+1] << (8-remainder));
-            packet->csiR[k][map[j]-1] = (double)tmp;
+            packet->csiR[map[j]-1][k] = (double)tmp;
             tmp = (payload[index / 8+1] >> remainder)|(payload[index/8+2] << (8-remainder));
-            packet->csiI[k][map[j]-1] = (double)tmp;
+            packet->csiI[map[j]-1][k] = (double)tmp;
             index += 16;
         }
     }
@@ -135,6 +135,7 @@ csi_packet* CSIParser::parse_csi_from_file(const char* filename, int* count)
 {
     csi_packet *packet;
     packet = read_bf_file(filename, count);
+    std::cout << "field:" << endl;
     if (!module_Scaled(packet, *count)) {
         return nullptr;
     }
@@ -169,8 +170,8 @@ bool CSIParser::get_scaled_csi(csi_packet *packet)
     scale = sqrt(scale / total_noise_pwr);
     for (int i = 0 ; i < 3; i++) {
         for (int j = 0; j < 30; j++) {
-            packet->csiI[j][i] *= scale;
-            packet->csiR[j][i] *= scale;
+            packet->csiI[i][j] *= scale;
+            packet->csiR[i][j] *= scale;
         }
     }
     return true;
@@ -234,7 +235,6 @@ csi_packet* CSIParser::read_bf_file(const char* filename, int32_t *count)
 
     packet = (csi_packet*)calloc(*count, sizeof(csi_packet));
     num = -1;
-
     while (cur < len-3) {
         if (fread(buffer+0, 3, 1, file) != 1) {
             fprintf(stderr, "Error reading record from %s: %s\n", filename, strerror(errno));
